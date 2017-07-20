@@ -104,3 +104,4 @@ modules.xml
 trial.iml
 vcs.xml
 workspace.xml
+*.pickle
