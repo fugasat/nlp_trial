@@ -1,7 +1,9 @@
 import os
 import codecs
+import numpy as np
 import MeCab
 import pickle
+import random
 from gensim import corpora
 from gensim import models
 
@@ -82,6 +84,47 @@ def tokenize(text):
     return words
 
 
+def create_dataset(data, categories, num_test=100):
+    """
+    学習用データセットを作成
+    """
+    data_train = []
+    data_test = []
+    label_train = []
+    label_test = []
+
+    categories_uniq = list(set(categories))
+    for category in categories_uniq:
+        # 対象カテゴリのデータのみ抽出
+        category_fill = np.array([category] * len(data))
+        categories_mask = categories == category_fill
+        category_label = categories[categories_mask]
+        category_data = data[categories_mask]
+
+        # データをシャッフルする
+        random.shuffle(category_data)
+
+        # 訓練データが十分に確保できないときはエラーを出力
+        num_category = len(category_label)
+        if num_test > num_category / 2:
+            raise RuntimeError("runtime error : num_test > num_category / 2")
+
+        # 訓練データとテストデータに分割
+        num_train = num_category - num_test
+        category_data_train = category_data[:num_train]
+        category_data_test = category_data[num_train:]
+        category_label_train = category_label[:num_train]
+        category_label_test = category_label[num_train:]
+
+        # データセットに追加
+        data_train.extend(category_data_train)
+        data_test.extend(category_data_test)
+        label_train.extend(category_label_train)
+        label_test.extend(category_label_test)
+
+    return data_train, label_train, data_test, label_test
+
+
 if __name__ == '__main__':
     # Livedoorコーパスから文章ごとに単語リストを抽出
     """
@@ -97,6 +140,8 @@ if __name__ == '__main__':
     with open('categories.pickle', mode='rb') as f:
         categories = pickle.load(f)
 
+    categories = np.array(categories)
+
     # 単語リストを単語ベクトルに変換
     """
     bow_corpus, dic = create_bow_vec(documents)
@@ -110,27 +155,34 @@ if __name__ == '__main__':
         bow_corpus = pickle.load(f)
     with open('dic.pickle', mode='rb') as f:
         dic = pickle.load(f)
+    print("dic          : len={0}".format(len(dic)))
+    print("bow_corpus   : len={0} , len[0]={1} , value[0]={2}".format(len(bow_corpus), len(bow_corpus[0]), bow_corpus[0]))
 
     # TF-IDFによる重み付け
     """
     tfidf_model = models.TfidfModel(bow_corpus)
-    tfidf_corpus = tfidf_model[bow_corpus]
+    tfidf_corpus = np.array(tfidf_model[bow_corpus])
     with open('tfidf_corpus.pickle', mode='wb') as f:
         pickle.dump(tfidf_corpus, f)
     """
 
     with open('tfidf_corpus.pickle', mode='rb') as f:
         tfidf_corpus = pickle.load(f)
+    print("tfidf_corpus : len={0} , len[0]={1} , value[0]={2}".format(len(tfidf_corpus), len(tfidf_corpus[0]), tfidf_corpus[0]))
 
     # LSIによる次元削減
     """
     lsi_model = models.LsiModel(tfidf_corpus, id2word=dic, num_topics=300)
-    lsi_corpus = lsi_model[tfidf_corpus]
+    lsi_corpus = np.array(lsi_model[tfidf_corpus])
     with open('lsi_corpus.pickle', mode='wb') as f:
         pickle.dump(lsi_corpus, f)
     """
 
     with open('lsi_corpus.pickle', mode='rb') as f:
         lsi_corpus = pickle.load(f)
+    print("lsi_corpus   : len={0} , len[0]={1} , value[0]={2}".format(len(lsi_corpus), len(lsi_corpus[0]), lsi_corpus[0]))
+
+    # 教師データ作成
+    data_train, label_train, data_test, label_test = create_dataset(lsi_corpus, categories)
 
     pass
