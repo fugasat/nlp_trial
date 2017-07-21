@@ -19,6 +19,8 @@ def read_corpus(doc_path, dirs):
     for category, dir_name in enumerate(dirs):
         dir_name = os.path.join(doc_path, dir_name)
         for filename in os.listdir(dir_name):
+            if filename[0] == ".":
+                continue
             filename = os.path.join(dir_name, filename)
 
             # 1記事について全行読み込む
