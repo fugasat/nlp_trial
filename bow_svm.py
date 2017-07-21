@@ -1,11 +1,5 @@
-import os
-import codecs
-import numpy as np
-import MeCab
 import pickle
-import random
 import time
-from gensim import corpora, models
 from sklearn import svm, grid_search
 import dataset
 
@@ -27,6 +21,8 @@ if __name__ == '__main__':
     start = time.time()
     print("training...")
     clf.fit(data_train, label_train)
+    with open('bow_svm.pickle', mode='wb') as f:
+        pickle.dump(clf, f)
 
     # 学習した結果のスコアの確認
     # (memo)

@@ -4,21 +4,20 @@ import numpy as np
 import MeCab
 import pickle
 import random
-import time
 from gensim import corpora, models
 
 base_path = "../livedoor"
 dir_names = ["dokujo-tsushin","it-life-hack","kaden-channel","livedoor-homme","movie-enter","peachy","smax","sports-watch","topic-news"]
 
 
-def read_corpus():
+def read_corpus(doc_path, dirs):
     """
     Livedoorコーパスを読み込み、文書ごとに単語ベクトルを生成
     """
     documents = []
     categories = []
-    for category, dir_name in enumerate(dir_names):
-        dir_name = os.path.join(base_path, dir_name)
+    for category, dir_name in enumerate(dirs):
+        dir_name = os.path.join(doc_path, dir_name)
         for filename in os.listdir(dir_name):
             filename = os.path.join(dir_name, filename)
 
@@ -37,14 +36,14 @@ def read_corpus():
     return documents, categories
 
 
-def create_bow_vec(documents):
+def create_bow_vec(documents, no_below=20, no_above=0.3):
     """
     文章の単語リストをベクトルに変換する
     """
     dic = corpora.Dictionary(documents)
 
     # 単語辞書から出現頻度の少ない単語及び出現頻度の多すぎる単語を排除
-    dic.filter_extremes(no_below=20, no_above=0.3)
+    dic.filter_extremes(no_below=no_below, no_above=no_above)
 
     # Bag of Wordsベクトルの作成
     bow_corpus = [dic.doc2bow(d) for d in documents]
@@ -129,7 +128,7 @@ def create_dataset_from_corpus(data, categories, per_train=0.9):
 def create_dataset():
     # Livedoorコーパスから文章ごとに単語リストを抽出
     """
-    documents, categories = read_corpus()
+    documents, categories = read_corpus(base_path, dir_names)
     with open('documents.pickle', mode='wb') as f:
         pickle.dump(documents, f)
     with open('categories.pickle', mode='wb') as f:
