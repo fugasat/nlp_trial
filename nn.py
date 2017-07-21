@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import time
+import pickle
 import tensorflow as tf
 import dataset
 
@@ -80,5 +81,8 @@ if __name__ == '__main__':
     # test_x, test_yは事前準備しておいたテストデータ
     a = sess.run(accuracy, feed_dict={x: data_test, y_: label_test})
     print("TEST DATA ACCURACY: %.0f%%" % (a * 100.0))
+
+    with open('bow_nn2.pickle', mode='wb') as f:
+        pickle.dump(sess, f)
 
     pass
